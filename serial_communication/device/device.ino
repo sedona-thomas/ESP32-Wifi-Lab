@@ -9,6 +9,7 @@
 
 #include "ValueQueue.h"
 #include "esp32_screen.h"
+#include "wifi_controller.h"
 #include <SPI.h>
 #include <TFT_eSPI.h>
 #include <list>
@@ -28,6 +29,8 @@ protected:
   std::string name;
   bool json;
   void send(){};
+  void sendWifi(){};
+  std::string formatMessage(std::string, uint8_t);
   void sendSerialObject(std::string, uint8_t);
 };
 
@@ -38,6 +41,7 @@ public:
   Button(int, bool);
   void read();
   void send();
+  void sendWifi();
 };
 
 class Potentiometer : public Sensor, public SerialCommunication {
@@ -47,6 +51,7 @@ public:
   Potentiometer(int, bool);
   void read();
   void send();
+  void sendWifi();
 };
 
 class Joystick : public SerialCommunication {
@@ -54,6 +59,8 @@ public:
   Joystick(){};
   Joystick(std::string, int, int, int, bool);
   void send();
+  void sendWifi();
+  std::string formatMessage(std::string, uint8_t);
   void sendSerialObject();
 
 private:
@@ -73,7 +80,7 @@ void sendPeripherals();
 
 void setup() {
   setupScreen();
-  setupSerial();
+  setupWifi();
 }
 
 void loop() {
@@ -92,21 +99,21 @@ void setupSerial() {
 
 // sendPeripherals(): sends values of all peripherals
 void sendPeripherals() {
+  std::string s = "";
   if (JSON) {
-    Serial.print("{ \"data\": {");
-    button.send();
-    Serial.print(",");
-    potentiometer.send();
-    Serial.print(",");
-    joystick.send();
-    Serial.println("}}");
+    s+= "{ \"data\": {");
+    s += button.formatMessage() + ",");
+    s += potentiometer.formatMessage() + ",";
+    s += joystick.formatMessage();
+    s += "}}";
   } else {
-    Serial.print("<data>");
-    button.send();
-    potentiometer.send();
-    joystick.send();
-    Serial.println("</data>");
+    s += "<data>";
+    s += button.formatMessage();
+    s += potentiometer.formatMessage();
+    s += joystick.formatMessage();
+    s += "</data>";
   }
+  send(s);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -142,6 +149,12 @@ void Button::read() {
 }
 
 // send(): sends data from peripheral over the serial connection
+void Button::send() {
+  read();
+  sendSerialObject("button", value);
+}
+
+// sendWifi(): sends data from peripheral over the serial wifi connection
 void Button::send() {
   read();
   sendSerialObject("button", value);
@@ -199,6 +212,31 @@ void Joystick::send() {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+// formatMessage(): formats data from peripheral
+std::string SerialCommunication::formatMessage(std::string sensor,
+                                               uint8_t value) {
+  std::string s = "";
+  if (json) {
+    if (name.length() > 0) {
+      s += "\"" + sensor + "_" + name + "\": ";
+    } else {
+      s += "\"" + sensor + "\": ";
+    }
+    s += value;
+  } else {
+    if (name.length() > 0) {
+      s += "<" + sensor + "_" + name + ">";
+      s += value;
+      s += "</" + sensor + "_" + name + ">";
+    } else {
+      s += "<" + sensor + ">";
+      s += value;
+      s += "</" + sensor + ">";
+    }
+  }
+  return s;
+}
+
 // send(): sends data from peripheral over the serial connection
 void SerialCommunication::sendSerialObject(std::string sensor, uint8_t value) {
   if (json) {
@@ -237,6 +275,54 @@ void SerialCommunication::sendSerialObject(std::string sensor, uint8_t value) {
       Serial.print(">");
     }
   }
+}
+
+// formatMessage(): formats data from joystick
+std::string Joystick::formatMessage(std::string sensor, uint8_t value) {
+  std::string s = "";
+  if (json) {
+    if (name.length() > 0) {
+      s += "\"";
+      s += sensor.c_str();
+      s += "_";
+      s += name.c_str();
+      s += "\": ";
+    } else {
+      s += "\"";
+      s += sensor.c_str();
+      s += "\": ";
+    }
+    s += potentiometerX.formatMessage();
+    s += potentiometerY.formatMessage();
+    s += buttonSW.formatMessage();
+  } else {
+    if (name.length() > 0) {
+      s += "<";
+      s += sensor.c_str();
+      s += "_";
+      s += name.c_str();
+      s += ">";
+      s += potentiometerX.formatMessage();
+      s += potentiometerY.formatMessage();
+      s += buttonSW.formatMessage();
+      s += "</";
+      s += sensor.c_str();
+      s += "_";
+      s += name.c_str();
+      s += ">";
+    } else {
+      s += "<";
+      s += sensor.c_str();
+      s += ">";
+      s += potentiometerX.formatMessage();
+      s += potentiometerY.formatMessage();
+      s += buttonSW.formatMessage();
+      s += "</";
+      s += sensor.c_str();
+      s += ">";
+    }
+  }
+  return s;
 }
 
 void Joystick::sendSerialObject() {
