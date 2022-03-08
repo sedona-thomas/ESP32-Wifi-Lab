@@ -22,7 +22,7 @@
 #### Upload Esp32 Serial Communication
 
 - Open the Arduino IDE
-- Open `________________________` from the Arduino IDE
+- Open `serial_communication/device/device.ino` from the Arduino IDE
 - Plug in the ESP32 TTGO T-Display
 - Select `Sketch > Upload`
 
