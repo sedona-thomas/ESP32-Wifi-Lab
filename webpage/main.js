@@ -84,7 +84,7 @@ async function readLoop() {
 
 // controlParameters(): manages sensor input to control parameters
 function controlParameters(data) {
-    redVal = (1 + Math.sin(data["potentiometer_1"])) * (255 / 2);
+    redVal = (1 + Math.sin(data["potentiometer_p1"])) * (255 / 2);
     greenVal = 60;
     blueVal = 50;
     document.body.style.backgroundColor = 'rgb(' + redVal + ',  ' + greenVal + ', ' + blueVal + ')';
