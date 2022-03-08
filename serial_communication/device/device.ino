@@ -64,9 +64,9 @@ private:
 
 ////////////////////////////////////////////////////////////////////////////////
 
-Button button = Button("mode", 37, JSON);
-Potentiometer potentiometer = Potentiometer("octave", 12, JSON);
-Joystick joystick = Joystick("joystick1", 27, 26, 25, JSON);
+Button button = Button("b1", 37, JSON);
+Potentiometer potentiometer = Potentiometer("p1", 12, JSON);
+Joystick joystick = Joystick("j1", 27, 26, 25, JSON);
 
 void setupSerial();
 void sendPeripherals();
